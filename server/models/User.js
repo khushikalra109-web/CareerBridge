@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'company', 'admin'], default: 'student' },
     resumeUrl: { type: String, default: '' },
+    resumeScore: { type: Number, default: 0, min: 0, max: 100 },
     skills: [{ type: String, trim: true }],
     savedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }],
     company: companySchema,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Code2, FileText, HeartPulse, Layers } from 'lucide-react';
 import Loader from '../components/Loader';
+import ResumeScore from '../components/ResumeScore';
 import { fetchJobs } from '../services/jobService';
 import { getStudentApplications } from '../services/applicationService';
 import { updateProfile, uploadResume } from '../services/authService';
@@ -11,9 +12,11 @@ function StudentDashboard({ user, showToast }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', skills: user?.skills?.join(', ') || '' });
   const [resumeFile, setResumeFile] = useState(null);
   const [recommendedJobs, setRecommendedJobs] = useState([]);
+  const [resumeScoreData, setResumeScoreData] = useState({ suggestions: [] });
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -52,18 +55,28 @@ function StudentDashboard({ user, showToast }) {
       const skillsList = form.skills.split(',').map((skill) => skill.trim()).filter(Boolean);
       const { data } = await updateProfile({ ...form, skills: skillsList });
       let updatedUser = data;
+      
       if (resumeFile) {
+        setUploadingResume(true);
         const formData = new FormData();
         formData.append('resume', resumeFile);
         const resumeResponse = await uploadResume(formData);
-        updatedUser = resumeResponse.data;
+        updatedUser = resumeResponse.data.user;
+        setResumeScoreData({
+          score: resumeResponse.data.resumeScore,
+          suggestions: resumeResponse.data.scoreData?.suggestions || [],
+        });
+        showToast('Resume uploaded and analyzed successfully');
+        setUploadingResume(false);
       }
+      
       setProfile(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setResumeFile(null);
       showToast('Profile updated successfully');
     } catch (error) {
       showToast(error.response?.data?.message || 'Update failed', 'error');
+      setUploadingResume(false);
     } finally {
       setSaving(false);
     }
@@ -80,9 +93,9 @@ function StudentDashboard({ user, showToast }) {
             <p className="mt-3 max-w-2xl text-slate-300">Your dashboard helps you manage resumes, review application progress, and discover jobs that match your skills.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-3xl bg-white/10 p-6">
+          <div className="rounded-3xl bg-white/10 p-6">
               <p className="text-sm uppercase tracking-[0.28em] text-sky-300">Resume score</p>
-              <p className="mt-3 text-4xl font-semibold">{resumeMatchScore}%</p>
+              <p className="mt-3 text-4xl font-semibold">{profile?.resumeScore || 0}%</p>
             </div>
             <div className="rounded-3xl bg-white/10 p-6">
               <p className="text-sm uppercase tracking-[0.28em] text-sky-300">Applications</p>
@@ -94,6 +107,12 @@ function StudentDashboard({ user, showToast }) {
 
       <div className="grid gap-8 xl:grid-cols-[380px_1fr]">
         <aside className="space-y-6 rounded-[32px] bg-white p-8 shadow-soft">
+          <ResumeScore 
+            score={profile?.resumeScore || 0} 
+            suggestions={resumeScoreData.suggestions}
+            isLoading={uploadingResume}
+          />
+
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6">
             <h2 className="text-xl font-semibold text-slate-900">Resume preview</h2>
             <p className="mt-3 text-sm text-slate-500">Open your uploaded resume or upload the latest version.</p>
@@ -113,7 +132,7 @@ function StudentDashboard({ user, showToast }) {
               </div>
               <div className="flex items-center justify-between rounded-3xl bg-white px-4 py-3">
                 <span className="text-sm text-slate-500">Resume score</span>
-                <span className="font-semibold text-slate-900">{resumeMatchScore}%</span>
+                <span className="font-semibold text-slate-900">{profile?.resumeScore || 0}%</span>
               </div>
             </div>
           </div>
@@ -154,10 +173,23 @@ function StudentDashboard({ user, showToast }) {
               </div>
               <div className="sm:col-span-2 space-y-3">
                 <label className="block text-sm font-medium text-slate-700">Upload resume (PDF)</label>
-                <input type="file" accept="application/pdf" onChange={(e) => setResumeFile(e.target.files[0])} className="w-full rounded-3xl border border-slate-200 px-4 py-3 text-slate-700 outline-none transition focus:border-sky-500" />
+                <input 
+                  type="file" 
+                  accept="application/pdf" 
+                  onChange={(e) => setResumeFile(e.target.files[0])} 
+                  disabled={uploadingResume}
+                  className="w-full rounded-3xl border border-slate-200 px-4 py-3 text-slate-700 outline-none transition focus:border-sky-500 disabled:cursor-not-allowed disabled:opacity-60" 
+                />
                 {resumeFile && <p className="text-sm text-slate-500">Selected file: {resumeFile.name}</p>}
+                {uploadingResume && <p className="text-sm text-sky-600 font-medium">Analyzing resume...</p>}
               </div>
-              <button type="submit" disabled={saving} className="sm:col-span-2 rounded-full bg-sky-600 px-6 py-4 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving...' : 'Save profile'}</button>
+              <button 
+                type="submit" 
+                disabled={saving || uploadingResume} 
+                className="sm:col-span-2 rounded-full bg-sky-600 px-6 py-4 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving || uploadingResume ? 'Processing...' : 'Save profile'}
+              </button>
             </form>
           </section>
 

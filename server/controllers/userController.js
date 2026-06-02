@@ -1,5 +1,9 @@
 const User = require('../models/User');
 const Job = require('../models/Job');
+const fs = require('fs').promises;
+const path = require('path');
+const pdfParse = require('pdf-parse');
+const { calculateResumeScore } = require('../utils/resumeScoreCalculator');
 
 exports.getProfile = async (req, res) => {
   try {
@@ -41,8 +45,36 @@ exports.uploadResume = async (req, res) => {
     }
 
     const resumeUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    const user = await User.findByIdAndUpdate(req.user.id, { resumeUrl }, { new: true, runValidators: true }).select('-password');
-    res.json(user);
+    const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+
+    let resumeScore = 0;
+    let scoreData = { score: 0, suggestions: [] };
+
+    try {
+      const fileBuffer = await fs.readFile(filePath);
+      const pdfData = await pdfParse(fileBuffer);
+      const resumeText = pdfData.text;
+
+      const user = await User.findById(req.user.id);
+      scoreData = calculateResumeScore(resumeText, user.skills || []);
+      resumeScore = scoreData.score;
+    } catch (pdfError) {
+      console.error('Error parsing PDF:', pdfError);
+      resumeScore = 0;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { resumeUrl, resumeScore },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.json({
+      user,
+      resumeScore,
+      scoreData,
+      message: 'Resume uploaded and analyzed successfully.',
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Could not upload resume.' });
@@ -153,3 +185,4 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Could not delete user.' });
   }
 };
+
