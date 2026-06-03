@@ -12,11 +12,12 @@ function Signup({ setUser, showToast }) {
     setLoading(true);
     try {
       const { data } = await register(form);
+      const normalizedUser = { ...data.user, _id: data.user._id || data.user.id };
       localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+      setUser(normalizedUser);
       showToast('Signup successful');
-      navigate(data.user.role === 'student' ? '/student' : data.user.role === 'company' ? '/company' : '/admin');
+      navigate(normalizedUser.role === 'student' ? '/student' : normalizedUser.role === 'company' ? '/company' : '/admin');
     } catch (error) {
       showToast(error.response?.data?.message || 'Signup failed', 'error');
     } finally {

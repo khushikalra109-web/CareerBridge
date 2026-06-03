@@ -9,6 +9,7 @@ const {
   getSavedJobs,
   toggleSavedJob,
   getRecommendedJobs,
+  getResumeInsights,
   getUsersByRole,
   getNotifications,
   getAllUsers,
@@ -20,6 +21,8 @@ const router = express.Router();
 router.get('/me', authenticate, getProfile);
 router.put('/me', authenticate, updateProfile);
 router.put('/me/resume', authenticate, resumeUpload, uploadResume);
+router.post('/me/resume', authenticate, resumeUpload, uploadResume);
+router.get('/me/ai-insights', authenticate, getResumeInsights);
 router.get('/me/saved-jobs', authenticate, getSavedJobs);
 router.post('/me/save-job/:jobId', authenticate, toggleSavedJob);
 router.get('/me/recommended', authenticate, getRecommendedJobs);

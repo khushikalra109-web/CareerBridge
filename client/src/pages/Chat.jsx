@@ -12,6 +12,7 @@ function Chat({ user, showToast }) {
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const currentUserId = user?._id || user?.id;
 
   const loadChats = async () => {
     setLoading(true);
@@ -102,8 +103,17 @@ function Chat({ user, showToast }) {
     }
   };
 
-  const activeUser = activeChat?.participants?.find((member) => member._id !== user?._id);
+  const activeUser = activeChat?.participants?.find((member) => member._id !== currentUserId);
   const activeName = selectedContact?.name || activeUser?.name;
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-[32px] bg-white p-10 text-center shadow-soft">
+        <p className="text-lg font-semibold text-slate-900">Loading chat...</p>
+        <p className="mt-2 text-slate-500">We are loading your chat session. Please wait a moment.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-8 xl:grid-cols-[320px_1fr]">
@@ -127,7 +137,7 @@ function Chat({ user, showToast }) {
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">No conversations yet. Start a chat from the contacts below.</div>
               ) : (
                 chats.map((chat) => {
-                  const participant = chat.participants.find((member) => member._id !== user?._id) || chat.participants[0];
+                  const participant = chat.participants.find((member) => member._id !== currentUserId) || chat.participants[0];
                   const isSelected = activeChat?._id === chat._id;
                   return (
                     <button
@@ -174,7 +184,7 @@ function Chat({ user, showToast }) {
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="font-semibold text-slate-900">{contact.name}</p>
-                            <p className="text-sm text-slate-500">{contact.role === 'company' ? contact.company || 'Company' : contact.role}</p>
+                            <p className="text-sm text-slate-500">{contact.role === 'company' ? contact.name || 'Company' : contact.role}</p>
                           </div>
                           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-wide text-slate-600">Message</span>
                         </div>
@@ -204,7 +214,7 @@ function Chat({ user, showToast }) {
                 <p className="text-sm text-slate-500">No messages yet. Say hello!</p>
               ) : (
                 messages.map((message, index) => {
-                  const isMine = message.senderId?._id === user?._id;
+                  const isMine = message.senderId?._id === currentUserId || message.senderId === currentUserId;
                   return (
                     <div key={index} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-3xl px-4 py-3 text-sm ${isMine ? 'bg-sky-600 text-white' : 'bg-white text-slate-900'} shadow-sm`}>

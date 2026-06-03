@@ -28,6 +28,35 @@ function Jobs({ user, showToast }) {
   const [savedJobs, setSavedJobs] = useState([]);
   const [recommended, setRecommended] = useState([]);
 
+  const normalizeSkill = (skill) => String(skill || '').toLowerCase().trim().replace(/[.,;]+$/g, '');
+  const normalizeSkills = (skillsList) => {
+    if (!skillsList) return [];
+    const normalized = Array.isArray(skillsList) ? skillsList : String(skillsList).split(',');
+    return Array.from(new Set(normalized.map(normalizeSkill).filter(Boolean)));
+  };
+
+  const resumeSkills = useMemo(() => normalizeSkills(user?.resumeSkills?.length ? user.resumeSkills : user?.skills || []), [user]);
+
+  const jobsWithMatch = useMemo(() => jobs.map((job) => {
+    const jobSkills = normalizeSkills(job.skills || []);
+    const matchedSkills = jobSkills.filter((skill) => resumeSkills.includes(skill));
+    const missingSkills = jobSkills.filter((skill) => !resumeSkills.includes(skill));
+    const matchPercentage = jobSkills.length ? Math.round((matchedSkills.length / jobSkills.length) * 100) : 0;
+
+    return {
+      ...job,
+      matchInfo: {
+        jobId: job._id,
+        title: job.title,
+        company: job.companyId?.name || 'Company',
+        matchPercentage,
+        matchedSkills,
+        missingSkills,
+        canApply: matchPercentage >= 60,
+      },
+    };
+  }), [jobs, resumeSkills]);
+
   const loadJobs = async () => {
     setLoading(true);
     try {
@@ -161,13 +190,14 @@ function Jobs({ user, showToast }) {
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">No matches found. Try loosening the filter criteria.</div>
           ) : (
             <div className={`grid gap-5 ${viewMode === 'grid' ? 'lg:grid-cols-2 xl:grid-cols-3' : ''}`}>
-              {jobs.map((job) => (
+              {jobsWithMatch.map((job) => (
                 <JobCard
                   key={job._id}
                   job={job}
                   layout={viewMode}
                   saved={savedJobs.includes(job._id)}
                   onToggleSave={() => handleSaveToggle(job._id)}
+                  matchInfo={job.matchInfo}
                 />
               ))}
             </div>
@@ -198,7 +228,12 @@ function Jobs({ user, showToast }) {
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {recommended.map((job) => (
                   <div key={job._id} className="rounded-3xl bg-slate-900 p-5 shadow-lg">
-                    <p className="text-sm text-slate-400">{job.companyId?.name || 'Company'}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-slate-400">{job.companyId?.name || 'Company'}</p>
+                      {job.matchPercentage !== undefined && (
+                        <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300">{job.matchPercentage}% match</span>
+                      )}
+                    </div>
                     <h4 className="mt-3 text-lg font-semibold text-white">{job.title}</h4>
                     <p className="mt-3 text-sm text-slate-400">{job.location} • {job.jobType}</p>
                     <div className="mt-4 flex flex-wrap gap-2">

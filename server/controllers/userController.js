@@ -3,7 +3,7 @@ const Job = require('../models/Job');
 const fs = require('fs').promises;
 const path = require('path');
 const pdfParse = require('pdf-parse');
-const { calculateResumeScore } = require('../utils/resumeScoreCalculator');
+const { calculateResumeScore, extractResumeSkills, calculateJobMatch, normalizeSkills } = require('../utils/resumeScoreCalculator');
 
 exports.getProfile = async (req, res) => {
   try {
@@ -49,30 +49,70 @@ exports.uploadResume = async (req, res) => {
 
     let resumeScore = 0;
     let scoreData = { score: 0, suggestions: [] };
+    let extractedSkills = [];
+    let recommendedJobs = [];
 
     try {
       const fileBuffer = await fs.readFile(filePath);
       const pdfData = await pdfParse(fileBuffer);
-      const resumeText = pdfData.text;
+      const resumeText = pdfData.text || '';
 
-      const user = await User.findById(req.user.id);
-      scoreData = calculateResumeScore(resumeText, user.skills || []);
+      console.log('Resume parsed text length:', resumeText.length);
+      const currentUser = await User.findById(req.user.id);
+      extractedSkills = normalizeSkills(extractResumeSkills(resumeText));
+      console.log('Extracted resume skills:', extractedSkills);
+
+      scoreData = calculateResumeScore(resumeText, currentUser.skills || [], extractedSkills);
       resumeScore = scoreData.score;
+
+      const comparisonSkills = extractedSkills.length ? extractedSkills : normalizeSkills(currentUser.skills || []);
+      const jobs = await Job.find({}).populate('companyId', 'name company');
+      const jobMatches = jobs
+        .map((job) => {
+          const match = calculateJobMatch(job.skills || [], comparisonSkills);
+          console.log(`Job match for ${job.title}:`, match.matchPercentage, 'strongSkills=', match.strongSkills);
+          return {
+            job,
+            matchPercentage: match.matchPercentage,
+            missingSkills: match.missingSkills,
+            strongSkills: match.strongSkills,
+          };
+        })
+        .sort((a, b) => b.matchPercentage - a.matchPercentage)
+        .slice(0, 6);
+
+      recommendedJobs = jobMatches;
     } catch (pdfError) {
       console.error('Error parsing PDF:', pdfError);
       resumeScore = 0;
     }
 
-    const user = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      { resumeUrl, resumeScore },
+      {
+        resumeUrl,
+        resumeScore,
+        resumeMatchScore: resumeScore,
+        resumeSkills: extractedSkills,
+        recommendedJobs: recommendedJobs.map((item) => item.job._id),
+      },
       { new: true, runValidators: true }
     ).select('-password');
 
+    const missingSkills = Array.from(new Set(recommendedJobs.flatMap((item) => item.missingSkills))).slice(0, 8);
+
     res.json({
-      user,
+      user: updatedUser,
       resumeScore,
       scoreData,
+      insights: {
+        extractedSkills,
+        strongSkills: scoreData.strongSkills,
+        resumeStrength: resumeScore,
+        matchPercentage: resumeScore,
+        missingSkills,
+        recommendedJobs,
+      },
       message: 'Resume uploaded and analyzed successfully.',
     });
   } catch (error) {
@@ -115,18 +155,68 @@ exports.toggleSavedJob = async (req, res) => {
 exports.getRecommendedJobs = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    const skills = user.skills || [];
+    const skills = normalizeSkills(user.resumeSkills?.length ? user.resumeSkills : user.skills || []);
     if (!skills.length) return res.json({ jobs: [] });
 
-    const jobs = await Job.find({ skills: { $in: skills } })
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .populate('companyId', 'name company');
+    const jobs = await Job.find({}).populate('companyId', 'name company');
+    const matchedJobs = jobs
+      .map((job) => {
+        const match = calculateJobMatch(job.skills || [], skills);
+        return {
+          ...job.toObject(),
+          matchPercentage: match.matchPercentage,
+          missingSkills: match.missingSkills,
+          strongSkills: match.strongSkills,
+        };
+      })
+      .sort((a, b) => b.matchPercentage - a.matchPercentage)
+      .slice(0, 6);
 
-    res.json({ jobs });
+    res.json({ jobs: matchedJobs });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Unable to get recommended jobs.' });
+  }
+};
+
+exports.getResumeInsights = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    const skills = normalizeSkills(user.resumeSkills?.length ? user.resumeSkills : user.skills || []);
+    const jobs = await Job.find({}).populate('companyId', 'name company');
+
+    const recommendedJobs = jobs
+      .map((job) => {
+        const match = calculateJobMatch(job.skills || [], skills);
+        return {
+          job,
+          matchPercentage: match.matchPercentage,
+          missingSkills: match.missingSkills,
+          strongSkills: match.strongSkills,
+        };
+      })
+      .sort((a, b) => b.matchPercentage - a.matchPercentage)
+      .slice(0, 6);
+
+    const missingSkills = Array.from(new Set(recommendedJobs.flatMap((item) => item.missingSkills))).slice(0, 8);
+    const strongSkills = skills.slice(0, 6);
+
+    res.json({
+      user,
+      insights: {
+        extractedSkills: skills,
+        strongSkills,
+        missingSkills,
+        recommendedJobs,
+        resumeStrength: user.resumeScore || 0,
+        matchPercentage: user.resumeMatchScore || user.resumeScore || 0,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Unable to load AI resume insights.' });
   }
 };
 

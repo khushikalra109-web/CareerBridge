@@ -7,4 +7,5 @@ export const getProfile = (token) => {
   return api.get('/users/me');
 };
 export const updateProfile = (data) => api.put('/users/me', data);
-export const uploadResume = (formData) => api.put('/users/me/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const uploadResume = (formData) => api.post('/users/me/resume', formData);
+export const fetchResumeInsights = () => api.get('/users/me/ai-insights');

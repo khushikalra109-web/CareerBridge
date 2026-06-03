@@ -16,8 +16,10 @@ import Navbar from './components/Navbar';
 import { Toast } from './components/Toast';
 import { getProfile } from './services/authService';
 
+const normalizeUser = (user) => user ? { ...user, _id: user._id || user.id } : null;
+
 function App() {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
+  const [user, setUser] = useState(() => normalizeUser(JSON.parse(localStorage.getItem('user') || 'null')));
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -25,7 +27,11 @@ function App() {
   useEffect(() => {
     if (!token) return;
     getProfile(token)
-      .then((response) => setUser(response.data))
+      .then((response) => {
+        const normalizedUser = normalizeUser(response.data);
+        setUser(normalizedUser);
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
+      })
       .catch(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -58,7 +64,7 @@ function App() {
             path="/jobs/:id"
             element={<JobDetails showToast={showToast} user={user} />}
           />
-          <Route path="/student" element={<ProtectedRoute user={user}><StudentDashboard showToast={showToast} user={user} /></ProtectedRoute>} />
+          <Route path="/student" element={<ProtectedRoute user={user}><StudentDashboard showToast={showToast} user={user} setUser={setUser} /></ProtectedRoute>} />
           <Route path="/company" element={<ProtectedRoute user={user}><RoleRoute user={user} allowedRoles={[ 'company' ]}><CompanyDashboard showToast={showToast} user={user} /></RoleRoute></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute user={user}><RoleRoute user={user} allowedRoles={[ 'admin' ]}><AdminDashboard showToast={showToast} /></RoleRoute></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute user={user}><Chat user={user} showToast={showToast} /></ProtectedRoute>} />

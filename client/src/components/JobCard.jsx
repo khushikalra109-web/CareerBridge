@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Bookmark, MapPin, Sparkles } from 'lucide-react';
 
-function JobCard({ job, onToggleSave, saved, layout = 'grid' }) {
+function JobCard({ job, onToggleSave, saved, layout = 'grid', matchInfo }) {
+  const status = matchInfo?.matchPercentage >= 75 ? 'Excellent match' : matchInfo?.matchPercentage >= 50 ? 'Good fit' : 'Needs improvement';
+  const statusClass = matchInfo?.matchPercentage >= 75
+    ? 'bg-emerald-100 text-emerald-700'
+    : matchInfo?.matchPercentage >= 50
+      ? 'bg-sky-100 text-sky-700'
+      : 'bg-amber-100 text-amber-700';
+
   return (
     <div className={`group overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-xl ${layout === 'list' ? 'flex flex-col justify-between' : ''}`}>
       <div className="flex items-center justify-between gap-4">
@@ -22,11 +29,29 @@ function JobCard({ job, onToggleSave, saved, layout = 'grid' }) {
 
       <p className="mt-5 line-clamp-3 text-sm leading-6 text-slate-600">{job.description}</p>
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        {job.skills?.slice(0, 5).map((skill) => (
-          <span key={skill} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{skill}</span>
-        ))}
-      </div>
+      {matchInfo && (
+        <div className="mt-5 rounded-3xl bg-slate-50 p-4">
+          <div className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
+            <span>Resume match</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{status}</span>
+          </div>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+            <div style={{ width: `${matchInfo.matchPercentage}%` }} className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-cyan-400" />
+          </div>
+          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+            <span>{matchInfo.matchPercentage}% match</span>
+            <span>{matchInfo.matchedSkills.length} skills matched</span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {matchInfo.matchedSkills.slice(0, 3).map((skill) => (
+              <span key={skill} className="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-700">{skill}</span>
+            ))}
+            {matchInfo.missingSkills.length > 0 && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">{matchInfo.missingSkills.length} skills missing</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 flex items-center justify-between gap-3">
         <Link to={`/jobs/${job._id}`} className="text-sm font-semibold text-sky-600 transition hover:text-sky-800">View details</Link>

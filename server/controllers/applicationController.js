@@ -69,7 +69,7 @@ exports.getStudentApplications = async (req, res) => {
     const applications = await Application.find({ applicantId: req.user.id })
       .populate('jobId', 'title companyId location salary')
       .populate('companyId', 'name company');
-    res.json(applications);
+    res.json({ success: true, applications });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Unable to fetch your applications.' });

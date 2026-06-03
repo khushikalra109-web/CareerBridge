@@ -3,11 +3,10 @@ import { motion } from 'framer-motion';
 import { Code2, FileText, HeartPulse, Layers } from 'lucide-react';
 import Loader from '../components/Loader';
 import ResumeScore from '../components/ResumeScore';
-import { fetchJobs } from '../services/jobService';
 import { getStudentApplications } from '../services/applicationService';
-import { updateProfile, uploadResume } from '../services/authService';
+import { updateProfile, uploadResume, fetchResumeInsights } from '../services/authService';
 
-function StudentDashboard({ user, showToast }) {
+function StudentDashboard({ user, showToast, setUser }) {
   const [profile, setProfile] = useState(user);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,14 +15,46 @@ function StudentDashboard({ user, showToast }) {
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', skills: user?.skills?.join(', ') || '' });
   const [resumeFile, setResumeFile] = useState(null);
   const [recommendedJobs, setRecommendedJobs] = useState([]);
+  const [aiInsights, setAiInsights] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const [resumeScoreData, setResumeScoreData] = useState({ suggestions: [] });
+
+  useEffect(() => {
+    setProfile(user);
+    setForm({
+      name: user?.name || '',
+      email: user?.email || '',
+      skills: user?.skills?.join(', ') || '',
+    });
+  }, [user]);
+
+  const loadAiInsights = async () => {
+    setInsightsLoading(true);
+    try {
+      const { data } = await fetchResumeInsights();
+      setAiInsights(data.insights || null);
+      setRecommendedJobs(data.insights?.recommendedJobs?.map((item) => item.job) || []);
+
+      if (data.user) {
+        setProfile(data.user);
+        if (setUser && JSON.stringify(data.user) !== JSON.stringify(user)) {
+          setUser(data.user);
+        }
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+    } catch (error) {
+      console.error('Failed to load AI insights:', error);
+    } finally {
+      setInsightsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadApplications = async () => {
       setLoading(true);
       try {
         const { data } = await getStudentApplications();
-        setApplications(data);
+        setApplications(Array.isArray(data) ? data : data?.applications || []);
       } catch (error) {
         showToast(error.response?.data?.message || 'Unable to fetch applications', 'error');
       } finally {
@@ -31,46 +62,50 @@ function StudentDashboard({ user, showToast }) {
       }
     };
 
-    const loadRecommendations = async () => {
-      try {
-        const skills = form.skills;
-        if (!skills) return;
-        const { data } = await fetchJobs({ skills, limit: 4 });
-        setRecommendedJobs(data.jobs);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    if (user) {
-      loadApplications();
-      loadRecommendations();
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  }, [user, form.skills]);
+
+    loadApplications();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadAiInsights();
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       const skillsList = form.skills.split(',').map((skill) => skill.trim()).filter(Boolean);
-      const { data } = await updateProfile({ ...form, skills: skillsList });
-      let updatedUser = data;
-      
+      const profileResponse = await updateProfile({ ...form, skills: skillsList });
+      let updatedUser = profileResponse.data;
+      if (setUser) setUser(updatedUser);
+
       if (resumeFile) {
         setUploadingResume(true);
         const formData = new FormData();
         formData.append('resume', resumeFile);
         const resumeResponse = await uploadResume(formData);
         updatedUser = resumeResponse.data.user;
+        if (setUser) setUser(updatedUser);
         setResumeScoreData({
           score: resumeResponse.data.resumeScore,
           suggestions: resumeResponse.data.scoreData?.suggestions || [],
         });
+        setAiInsights(resumeResponse.data.insights || null);
+        setRecommendedJobs(resumeResponse.data.insights?.recommendedJobs?.map((item) => item.job) || []);
         showToast('Resume uploaded and analyzed successfully');
         setUploadingResume(false);
+      } else {
+        await loadAiInsights();
+        updatedUser = JSON.parse(localStorage.getItem('user')) || updatedUser;
       }
-      
+
       setProfile(updatedUser);
+      if (setUser) setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setResumeFile(null);
       showToast('Profile updated successfully');
@@ -191,6 +226,86 @@ function StudentDashboard({ user, showToast }) {
                 {saving || uploadingResume ? 'Processing...' : 'Save profile'}
               </button>
             </form>
+          </section>
+
+          <section className="rounded-[32px] bg-white p-8 shadow-soft">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">AI Resume Insights</h2>
+                <p className="text-sm text-slate-500">See which jobs match your resume, skills to strengthen, and AI-powered recommendations.</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <div className="rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700">{aiInsights ? `${aiInsights.matchPercentage}% Match` : 'Loading AI insights...'}</div>
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_320px]">
+              <div className="space-y-6">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.28em] text-slate-500">Resume strength</p>
+                      <p className="mt-2 text-3xl font-semibold text-slate-900">{aiInsights?.resumeStrength ?? profile?.resumeScore ?? 0}%</p>
+                    </div>
+                    <div className="text-sm font-semibold text-slate-700">{aiInsights ? (aiInsights.resumeStrength >= 75 ? 'Strong' : aiInsights.resumeStrength >= 45 ? 'Average' : 'Needs improvement') : '...'}</div>
+                  </div>
+                  <div className="mt-6 h-4 overflow-hidden rounded-full bg-slate-200">
+                    <div style={{ width: `${aiInsights?.resumeStrength ?? profile?.resumeScore ?? 0}%` }} className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500"></div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                    <h3 className="text-base font-semibold text-slate-900">Strong skills</h3>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {aiInsights?.strongSkills?.length ? aiInsights.strongSkills.map((skill) => (
+                        <span key={skill} className="rounded-full bg-emerald-100 px-3 py-2 text-xs font-medium text-emerald-700 shadow-sm transition hover:bg-emerald-200">{skill}</span>
+                      )) : (
+                        <span className="text-sm text-slate-500">Upload a resume to detect your strongest skills.</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                    <h3 className="text-base font-semibold text-slate-900">Skills to improve</h3>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {aiInsights?.missingSkills?.length ? aiInsights.missingSkills.map((skill) => (
+                        <span key={skill} className="rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700">{skill}</span>
+                      )) : (
+                        <span className="text-sm text-slate-500">Your resume already matches well or you need to upload one.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                <h3 className="text-base font-semibold text-slate-900">Top recommended jobs</h3>
+                <div className="mt-5 space-y-4">
+                  {insightsLoading ? (
+                    <div className="rounded-3xl bg-white p-6 text-center text-slate-500">Loading recommended jobs...</div>
+                  ) : aiInsights?.recommendedJobs?.length ? (
+                    aiInsights.recommendedJobs.map((item) => (
+                      <div key={item.job._id} className="rounded-3xl bg-white p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm text-slate-500">{item.job.companyId?.name || 'Company'}</p>
+                            <h4 className="mt-1 text-lg font-semibold text-slate-900">{item.job.title}</h4>
+                          </div>
+                          <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">{item.matchPercentage}%</span>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                          {item.strongSkills.slice(0, 3).map((skill) => (
+                            <span key={skill} className="rounded-full bg-slate-100 px-2 py-1">{skill}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-3xl bg-white p-6 text-center text-slate-500">Update your resume and skills to generate AI recommendations.</div>
+                  )}
+                </div>
+              </div>
+            </div>
           </section>
 
           <section className="rounded-[32px] bg-white p-8 shadow-soft">
