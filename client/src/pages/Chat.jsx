@@ -117,7 +117,7 @@ function Chat({ user, showToast }) {
 
   return (
     <div className="grid gap-8 xl:grid-cols-[320px_1fr]">
-      <section className="rounded-[32px] bg-white p-6 shadow-soft">
+      <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
         <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
           <div className="rounded-3xl bg-sky-100 p-3 text-sky-700">
             <Users size={20} />
@@ -132,7 +132,7 @@ function Chat({ user, showToast }) {
           <div className="mt-6"><Loader /></div>
         ) : (
           <>
-            <div className="mt-6 space-y-3">
+            <div className="mt-6 space-y-3 max-h-[40vh] overflow-y-auto pr-1">
               {chats.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">No conversations yet. Start a chat from the contacts below.</div>
               ) : (
@@ -207,9 +207,9 @@ function Chat({ user, showToast }) {
           <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">{activeChat ? `${messages.length} messages` : selectedContact ? 'New chat selected' : 'No chat selected'}</div>
         </div>
 
-        <div className="mt-6 min-h-[360px] rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+        <div className="mt-6 min-h-[320px] max-h-[52vh] overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 p-5">
           {(activeChat || selectedContact) ? (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[44vh] overflow-y-auto pr-1">
               {messages.length === 0 ? (
                 <p className="text-sm text-slate-500">No messages yet. Say hello!</p>
               ) : (
@@ -231,7 +231,7 @@ function Chat({ user, showToast }) {
           )}
         </div>
 
-        <form onSubmit={handleSendMessage} className="mt-6 flex gap-3">
+        <form onSubmit={handleSendMessage} className="mt-6 flex flex-col gap-3 sm:flex-row">
           <input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}

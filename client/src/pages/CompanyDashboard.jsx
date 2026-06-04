@@ -122,7 +122,7 @@ function CompanyDashboard({ user, showToast }) {
   return (
     <div className="space-y-8">
       <section className="grid gap-8 xl:grid-cols-[420px_1fr]">
-        <div className="rounded-[32px] bg-white p-8 shadow-soft">
+        <div className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
           <h2 className="text-2xl font-semibold text-slate-900">Post a new job</h2>
           <p className="mt-2 text-sm text-slate-500">Create a premium listing to attract student applicants.</p>
           <form onSubmit={handleCreate} className="mt-6 space-y-4">
@@ -156,7 +156,7 @@ function CompanyDashboard({ user, showToast }) {
 
           <div className="mt-8">
             <h2 className="text-2xl font-semibold text-slate-900">Monthly applications</h2>
-            <div className="mt-6 h-64">
+            <div className="mt-6 h-[320px] sm:h-64">
               {analytics.monthlyStats.length ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={analytics.monthlyStats} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -175,7 +175,7 @@ function CompanyDashboard({ user, showToast }) {
         </div>
       </section>
 
-      <section className="rounded-[32px] bg-white p-8 shadow-soft">
+      <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">Your job listings</h2>
@@ -208,7 +208,7 @@ function CompanyDashboard({ user, showToast }) {
         )}
       </section>
 
-      <section className="rounded-[32px] bg-white p-8 shadow-soft">
+      <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">Applicants</h2>

@@ -121,18 +121,18 @@ function StudentDashboard({ user, showToast, setUser }) {
 
   return (
     <div className="space-y-10">
-      <section className="rounded-[32px] bg-gradient-to-r from-slate-950 via-slate-900 to-sky-900 px-8 py-12 text-white shadow-soft">
+      <section className="rounded-[32px] bg-gradient-to-r from-slate-950 via-slate-900 to-sky-900 px-6 py-10 text-white shadow-soft sm:px-8 sm:py-12">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-semibold sm:text-4xl">Welcome back, {profile?.name?.split(' ')[0] || 'Student'}.</h1>
             <p className="mt-3 max-w-2xl text-slate-300">Your dashboard helps you manage resumes, review application progress, and discover jobs that match your skills.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-3xl bg-white/10 p-6">
+            <div className="rounded-3xl bg-white/10 p-5 sm:p-6">
               <p className="text-sm uppercase tracking-[0.28em] text-sky-300">Resume score</p>
               <p className="mt-3 text-4xl font-semibold">{profile?.resumeScore || 0}%</p>
             </div>
-            <div className="rounded-3xl bg-white/10 p-6">
+            <div className="rounded-3xl bg-white/10 p-5 sm:p-6">
               <p className="text-sm uppercase tracking-[0.28em] text-sky-300">Applications</p>
               <p className="mt-3 text-4xl font-semibold">{applications.length}</p>
             </div>
@@ -141,7 +141,7 @@ function StudentDashboard({ user, showToast, setUser }) {
       </section>
 
       <div className="grid gap-8 xl:grid-cols-[380px_1fr]">
-        <aside className="space-y-6 rounded-[32px] bg-white p-8 shadow-soft">
+        <aside className="space-y-6 rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
           <ResumeScore 
             score={profile?.resumeScore || 0} 
             suggestions={resumeScoreData.suggestions}
@@ -186,7 +186,7 @@ function StudentDashboard({ user, showToast, setUser }) {
         </aside>
 
         <main className="space-y-8">
-          <section className="rounded-[32px] bg-white p-8 shadow-soft">
+          <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900">Update profile</h2>
@@ -228,7 +228,7 @@ function StudentDashboard({ user, showToast, setUser }) {
             </form>
           </section>
 
-          <section className="rounded-[32px] bg-white p-8 shadow-soft">
+          <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900">AI Resume Insights</h2>
@@ -308,8 +308,8 @@ function StudentDashboard({ user, showToast, setUser }) {
             </div>
           </section>
 
-          <section className="rounded-[32px] bg-white p-8 shadow-soft">
-            <div className="flex items-center justify-between gap-4">
+          <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900">Applications timeline</h2>
                 <p className="text-sm text-slate-500">Track status updates from recruiters.</p>
@@ -347,8 +347,8 @@ function StudentDashboard({ user, showToast, setUser }) {
             )}
           </section>
 
-          <section className="rounded-[32px] bg-white p-8 shadow-soft">
-            <div className="flex items-center gap-3 text-slate-900">
+          <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 text-slate-900">
               <Code2 size={22} />
               <h2 className="text-2xl font-semibold">Recommended jobs</h2>
             </div>

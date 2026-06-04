@@ -44,7 +44,7 @@ function Home({ showToast }) {
 
   return (
     <div className="space-y-16">
-      <section className="relative overflow-hidden rounded-[40px] bg-slate-950 px-6 py-16 text-white shadow-soft sm:px-10 lg:px-16">
+      <section className="relative overflow-hidden rounded-[40px] bg-slate-950 px-6 py-12 text-white shadow-soft sm:px-8 lg:px-16 sm:py-14">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.2),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.18),_transparent_30%)]" />
         <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
           <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="max-w-2xl space-y-6">
@@ -57,7 +57,7 @@ function Home({ showToast }) {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="grid gap-4 rounded-[32px] border border-white/10 bg-slate-900/90 p-8 shadow-2xl shadow-slate-950/40 sm:w-[520px]">
+          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="w-full max-w-xl grid gap-4 rounded-[32px] border border-white/10 bg-slate-900/90 p-6 shadow-2xl shadow-slate-950/40 sm:p-8 sm:max-w-[520px]">
             <div className="flex items-center justify-between gap-4 rounded-3xl bg-slate-950/90 p-5">
               <div>
                 <p className="text-sm text-slate-400">Live talent score</p>

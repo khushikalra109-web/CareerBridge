@@ -49,7 +49,7 @@ function AdminDashboard({ showToast }) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[32px] bg-white p-8 shadow-soft">
+      <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">Admin control panel</h2>
@@ -63,7 +63,7 @@ function AdminDashboard({ showToast }) {
         <Loader />
       ) : (
         <div className="grid gap-8 xl:grid-cols-[1fr_1fr]">
-          <section className="rounded-[32px] bg-white p-8 shadow-soft">
+          <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
             <h3 className="text-xl font-semibold text-slate-900">All users</h3>
             <div className="mt-6 space-y-4">
               {users.map((user) => (
@@ -79,7 +79,7 @@ function AdminDashboard({ showToast }) {
             </div>
           </section>
 
-          <section className="rounded-[32px] bg-white p-8 shadow-soft">
+          <section className="rounded-[32px] bg-white p-6 shadow-soft sm:p-8">
             <h3 className="text-xl font-semibold text-slate-900">All job postings</h3>
             <div className="mt-6 space-y-4">
               {jobs.map((job) => (

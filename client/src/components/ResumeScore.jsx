@@ -16,20 +16,20 @@ const ResumeScore = ({ score, suggestions = [], isLoading = false }) => {
   };
 
   return (
-    <div className={`border-2 ${colors.border} ${colors.bg} rounded-lg p-6 mb-6 w-full`}>
-      <div className="flex items-center justify-between mb-4">
+    <div className={`border-2 ${colors.border} ${colors.bg} rounded-3xl p-6 mb-6 w-full`}> 
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
         <h3 className="text-xl font-bold text-gray-800">Resume Score</h3>
         {isLoading && (
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
         )}
       </div>
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-baseline gap-2">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
           <span className={`text-5xl font-bold ${colors.text}`}>{score}%</span>
           <span className={`text-lg font-medium ${colors.text}`}>{getScoreLabel(score)}</span>
         </div>
-        <div className="w-24 h-24">
+        <div className="w-24 h-24 sm:w-28 sm:h-28">
           <svg className="w-full h-full" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="8" />
             <circle
@@ -58,7 +58,7 @@ const ResumeScore = ({ score, suggestions = [], isLoading = false }) => {
             {suggestions.map((suggestion, index) => (
               <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
                 <span className="text-blue-500 mt-0.5">•</span>
-                <span>{suggestion}</span>
+                <span className="break-words">{suggestion}</span>
               </li>
             ))}
           </ul>
