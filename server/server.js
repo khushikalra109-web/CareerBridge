@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const fs = require('fs'); // ✅ ADD THIS
 const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/authRoutes');
@@ -19,6 +20,14 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+// ✅ FIX 1: CREATE UPLOADS FOLDER ON START (IMPORTANT FOR RENDER)
+const uploadDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Uploads folder created');
+}
+
 // Allowed Origins
 const allowedOrigins = [
   'http://localhost:5173',
@@ -32,15 +41,16 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // temporarily allow all origins
-      // callback(new Error('Not allowed by CORS'));
+      callback(null, true); // allow all temporarily
     }
   },
   credentials: true
 }));
 
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ✅ FIX 2: SAFE STATIC PATH
+app.use('/uploads', express.static(uploadDir));
 
 // Socket.io
 const io = new Server(server, {
