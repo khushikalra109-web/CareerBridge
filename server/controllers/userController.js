@@ -45,17 +45,18 @@ exports.uploadResume = async (req, res) => {
     }
 
     const resumeUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
 
-    let resumeScore = 0;
-    let scoreData = { score: 0, suggestions: [] };
-    let extractedSkills = [];
-    let recommendedJobs = [];
+console.log('Uploaded file details:', req.file);
 
-    try {
-      const fileBuffer = await fs.readFile(filePath);
-      const pdfData = await pdfParse(fileBuffer);
-      const resumeText = pdfData.text || '';
+let resumeScore = 0;
+let scoreData = { score: 0, suggestions: [] };
+let extractedSkills = [];
+let recommendedJobs = [];
+
+try {
+  const fileBuffer = await fs.readFile(req.file.path);
+  const pdfData = await pdfParse(fileBuffer);
+  const resumeText = pdfData.text || '';
 
       console.log('Resume parsed text length:', resumeText.length);
       const currentUser = await User.findById(req.user.id);
